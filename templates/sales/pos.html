@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+
+{% block title %}Point of Sale · Smart Inventory{% endblock %}
+{% block page_title %}Point of Sale{% endblock %}
+{% block page_subtitle %}Process customer transactions{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- LEFT PANEL -->
+    <div class="col-md-7">
+
+        <!-- BARCODE SCANNER -->
+        <div class="card mb-4" style="border-color: rgba(6,182,212,0.3);">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width:40px;height:40px;background:rgba(6,182,212,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-barcode" style="color:#06b6d4;font-size:18px;"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <label class="form-label mb-1">Scan Barcode</label>
+                        <input type="text" id="barcodeInput" class="form-control"
+                               placeholder="Scan barcode or type product name..."
+                               autocomplete="off"
+                               style="font-family:'JetBrains Mono',monospace; font-size:14px;">
+                    </div>
+                    <button onclick="manualSearch()" class="btn btn-primary" style="height:42px; margin-top:20px; padding: 0 16px;">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div id="scanResult" style="margin-top:8px; font-size:13px; display:none; padding: 6px 10px; border-radius:6px;"></div>
+            </div>
+        </div>
+
+        <!-- PRODUCTS TABLE -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-box me-2" style="color:var(--accent-blue);"></i>Products</span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search..."
+                       style="max-width:180px; padding:5px 10px; font-size:12px;">
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0" id="productTable">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Qty</th>
+                                <th>Add</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                            <tr data-name="{{ product.name|lower }}"
+                                data-fullname="{{ product.name }}"
+                                data-barcode="{{ product.barcode_code }}"
+                                data-scancode="{{ product.name }} - N{{ product.price|floatformat:0 }}"
+                                data-id="{{ product.id }}"
+                                data-price="{{ product.price }}"
+                                data-stock="{{ product.quantity }}">
+                                <td>
+                                    <div style="font-weight:600; font-size:13px;">{{ product.name }}</div>
+                                    <div style="font-size:11px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">{{ product.barcode_code }}</div>
+                                </td>
+                                <td style="font-family:'JetBrains Mono',monospace; color:var(--accent-green); font-weight:600; font-size:13px;">
+                                    ₦{{ product.price }}
+                                </td>
+                                <td>
+                                    <span class="badge-custom {% if product.quantity <= 5 %}badge-red{% else %}badge-green{% endif %}">
+                                        {{ product.quantity }}
+                                    </span>
+                                </td>
+                                <td style="width:75px;">
+                                    <input type="number" class="form-control qty-input" id="qty_{{ product.id }}"
+                                           value="1" min="1" max="{{ product.quantity }}"
+                                           style="padding:4px 8px; font-size:12px; width:60px;">
+                                </td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm" style="padding:5px 10px; font-size:12px;"
+                                            onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price }}, {{ product.quantity }})"
+                                            {% if product.quantity == 0 %}disabled{% endif %}>
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-center py-4" style="color:var(--text-muted);">No products available</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CART PANEL -->
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-cart-shopping me-2" style="color:var(--accent-cyan);"></i>Cart</span>
+                <button class="btn btn-outline-secondary btn-sm" onclick="clearCart()" style="padding:3px 10px; font-size:12px;">
+                    <i class="fas fa-trash me-1"></i>Clear
+                </button>
+            </div>
+            <div class="card-body d-flex flex-column" style="min-height:380px;">
+                <div id="cartItems" style="flex:1; overflow-y:auto; max-height:320px;">
+                    <div id="emptyCart" class="text-center py-5" style="color:var(--text-muted);">
+                        <i class="fas fa-cart-shopping" style="font-size:32px; opacity:0.3;"></i>
+                        <p style="margin-top:10px; font-size:12px;">Cart is empty<br><small>Scan a barcode or click +</small></p>
+                    </div>
+                </div>
+
+                <div style="border-top:1px solid var(--border-color); margin-top:14px; padding-top:14px;">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span style="color:var(--text-secondary); font-size:13px;">Subtotal</span>
+                        <span id="subtotal" style="font-family:'JetBrains Mono',monospace; font-size:13px;">₦0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span style="font-size:15px; font-weight:700;">Total</span>
+                        <span id="total" style="font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:700; color:var(--accent-green);">₦0.00</span>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label">Amount Tendered (₦)</label>
+                        <input type="number" id="amountTendered" class="form-control" placeholder="0.00" step="0.01" min="0" oninput="calcChange()">
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span style="color:var(--text-secondary); font-size:13px;">Change</span>
+                        <span id="change" style="font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:600;">₦0.00</span>
+                    </div>
+
+                    <form method="post" id="saleForm" action="{% url 'pos_view' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="cart_data" id="cartData">
+                        <button type="submit" class="btn btn-success w-100" id="checkoutBtn" disabled onclick="prepareCheckout()">
+                            <i class="fas fa-check me-2"></i>Complete Sale
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let cart = {};
+
+// Auto-focus barcode input
+const barcodeInput = document.getElementById('barcodeInput');
+barcodeInput.focus();
+
+// Barcode scanner sends Enter after scan
+barcodeInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        searchByBarcode(this.value.trim());
+    }
+});
+
+function manualSearch() {
+    searchByBarcode(barcodeInput.value.trim());
+}
+
+function searchByBarcode(scanned) {
+    if (!scanned) return;
+
+    // Scanned text will be like "Iphone XR - N230000"
+    // Match against data-scancode OR data-name OR data-barcode
+    const rows = document.querySelectorAll('#productTable tbody tr');
+    let found = false;
+
+    rows.forEach(row => {
+        const scanCode  = (row.getAttribute('data-scancode') || '').toLowerCase();
+        const name      = (row.getAttribute('data-name') || '').toLowerCase();
+        const barcode   = (row.getAttribute('data-barcode') || '').toLowerCase();
+        const scannedLc = scanned.toLowerCase();
+
+        if (scanCode === scannedLc || name === scannedLc || barcode === scannedLc || scanCode.includes(scannedLc) || scannedLc.includes(name)) {
+            found = true;
+            const id    = parseInt(row.getAttribute('data-id'));
+            const pname = row.getAttribute('data-fullname');
+            const price = parseFloat(row.getAttribute('data-price'));
+            const stock = parseInt(row.getAttribute('data-stock'));
+
+            addToCartDirect(id, pname, price, stock, 1);
+
+            showResult(`✓ Added: ${pname} — ₦${price}`, 'success');
+            row.style.background = 'rgba(16,185,129,0.08)';
+            setTimeout(() => row.style.background = '', 1200);
+        }
+    });
+
+    if (!found) {
+        showResult(`✗ No product found for: "${scanned}"`, 'error');
+    }
+
+    barcodeInput.value = '';
+    barcodeInput.focus();
+}
+
+function showResult(msg, type) {
+    const el = document.getElementById('scanResult');
+    el.style.display = 'block';
+    el.style.background = type === 'success' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
+    el.style.color = type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)';
+    el.style.border = type === 'success' ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(239,68,68,0.3)';
+    el.textContent = msg;
+    setTimeout(() => el.style.display = 'none', 3000);
+}
+
+function addToCart(id, name, price, stock) {
+    const qty = parseInt(document.getElementById('qty_' + id).value) || 1;
+    addToCartDirect(id, name, price, stock, qty);
+    document.getElementById('qty_' + id).value = 1;
+}
+
+function addToCartDirect(id, name, price, stock, qty) {
+    const current = cart[id] ? cart[id].qty : 0;
+    if (current + qty > stock) {
+        showResult(`Not enough stock for ${name}!`, 'error');
+        return;
+    }
+    if (cart[id]) { cart[id].qty += qty; }
+    else { cart[id] = { name, price: parseFloat(price), qty, stock }; }
+    renderCart();
+}
+
+function removeFromCart(id) { delete cart[id]; renderCart(); }
+
+function updateCartQty(id, qty) {
+    if (qty <= 0) { removeFromCart(id); return; }
+    if (qty > cart[id].stock) return;
+    cart[id].qty = qty;
+    renderCart();
+}
+
+function clearCart() { cart = {}; renderCart(); }
+
+function renderCart() {
+    const container   = document.getElementById('cartItems');
+    const empty       = document.getElementById('emptyCart');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const keys        = Object.keys(cart);
+
+    if (keys.length === 0) {
+        container.innerHTML = '';
+        container.appendChild(empty);
+        empty.style.display = 'block';
+        checkoutBtn.disabled = true;
+        updateTotals(0); return;
+    }
+
+    empty.style.display = 'none';
+    let html = '', total = 0;
+
+    keys.forEach(id => {
+        const item = cart[id];
+        const sub  = item.price * item.qty;
+        total += sub;
+        html += `
+        <div style="padding:8px 0; border-bottom:1px solid var(--border-color);">
+            <div class="d-flex justify-content-between align-items-start">
+                <div style="font-size:13px; font-weight:600; flex:1;">${item.name}</div>
+                <button onclick="removeFromCart(${id})" style="background:none;border:none;color:var(--accent-red);cursor:pointer;padding:0 4px;">
+                    <i class="fas fa-times" style="font-size:11px;"></i>
+                </button>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-1">
+                <div class="d-flex align-items-center gap-2">
+                    <button onclick="updateCartQty(${id},${item.qty-1})" style="width:22px;height:22px;background:rgba(0,0,0,0.06);border:none;border-radius:4px;cursor:pointer;font-size:13px;">−</button>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;min-width:20px;text-align:center;">${item.qty}</span>
+                    <button onclick="updateCartQty(${id},${item.qty+1})" style="width:22px;height:22px;background:rgba(0,0,0,0.06);border:none;border-radius:4px;cursor:pointer;font-size:13px;">+</button>
+                </div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent-green);font-weight:600;">₦${sub.toFixed(2)}</div>
+            </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+    checkoutBtn.disabled = false;
+    updateTotals(total);
+    calcChange();
+}
+
+function updateTotals(total) {
+    document.getElementById('subtotal').textContent = '₦' + total.toFixed(2);
+    document.getElementById('total').textContent    = '₦' + total.toFixed(2);
+}
+
+function calcChange() {
+    const total    = parseFloat(document.getElementById('total').textContent.replace('₦','')) || 0;
+    const tendered = parseFloat(document.getElementById('amountTendered').value) || 0;
+    const change   = tendered - total;
+    const el       = document.getElementById('change');
+    el.textContent = '₦' + (change >= 0 ? change : 0).toFixed(2);
+    el.style.color = change >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+}
+
+function prepareCheckout() {
+    document.getElementById('cartData').value = JSON.stringify(cart);
+}
+
+// Product search
+document.getElementById('searchInput').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('#productTable tbody tr').forEach(row => {
+        row.style.display = (row.getAttribute('data-name') || '').includes(q) ? '' : 'none';
+    });
+});
+
+// Keep barcode focused
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('input') && !e.target.closest('button') && !e.target.closest('select')) {
+        barcodeInput.focus();
+    }
+});
+</script>
+{% endblock %}

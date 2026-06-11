@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Products · Smart Inventory{% endblock %}
+{% block page_title %}Products{% endblock %}
+{% block page_subtitle %}Manage your inventory items{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'product_create' %}" class="btn btn-primary">
+    <i class="fas fa-plus me-2"></i>Add Product
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-box me-2" style="color: var(--accent-blue);"></i>All Products</span>
+        <span style="font-size:12px; color:var(--text-secondary); font-family:'JetBrains Mono',monospace;">
+            {{ products|length }} items
+        </span>
+    </div>
+    <div class="card-body p-0">
+        {% if products %}
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>
+                            <div style="font-weight:600; font-size:14px;">{{ product.name }}</div>
+                            {% if product.barcode %}
+                            <div style="font-size:11px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">
+                                {{ product.barcode }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge-custom badge-blue">{{ product.category|default:"General" }}</span>
+                        </td>
+                        <td style="font-family:'JetBrains Mono',monospace; color:var(--accent-green); font-weight:600;">
+                            ₦{{ product.price }}
+                        </td>
+                        <td style="font-family:'JetBrains Mono',monospace; font-weight:600;">
+                            {{ product.quantity }}
+                        </td>
+                        <td>
+                            {% if product.quantity <= 5 %}
+                            <span class="badge-custom badge-red"><i class="fas fa-circle me-1" style="font-size:7px;"></i>Low Stock</span>
+                            {% else %}
+                            <span class="badge-custom badge-green"><i class="fas fa-circle me-1" style="font-size:7px;"></i>In Stock</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'product_edit' product.pk %}"> class="btn btn-outline-secondary btn-sm" style="padding:6px 12px; font-size:12px;">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <a href="{% url 'product_delete' product.pk %}" class="btn btn-danger btn-sm" style="padding:6px 12px; font-size:12px;">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>s
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-box-open" style="font-size:48px; color:var(--text-muted);"></i>
+            <p style="color:var(--text-secondary); margin-top:16px;">No products yet. Add your first product!</p>
+            <a href="{% url 'product_create' %}" class="btn btn-primary mt-2">
+                <i class="fas fa-plus me-2"></i>Add Product
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

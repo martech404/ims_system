@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Inventory{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* ── LIGHT THEME ── */
+        [data-theme="light"] {
+            --bg-primary:    #f7f8fc;
+            --bg-card:       #ffffff;
+            --sidebar-bg:    #ffffff;
+            --topbar-bg:     #ffffff;
+            --border-color:  #e8ecf0;
+            --text-primary:  #1a202c;
+            --text-secondary:#64748b;
+            --text-muted:    #b0bec5;
+            --accent-blue:   #2563eb;
+            --accent-cyan:   #06b6d4;
+            --accent-purple: #7c3aed;
+            --accent-green:  #059669;
+            --accent-red:    #dc2626;
+            --accent-orange: #d97706;
+            --shadow:        0 1px 4px rgba(0,0,0,0.07);
+            --shadow-hover:  0 4px 16px rgba(0,0,0,0.10);
+            --nav-hover:     #f1f5fe;
+            --nav-active-bg: #eff6ff;
+            --nav-active-color: #2563eb;
+            --input-bg:      #f7f8fc;
+            --table-stripe:  #f8faff;
+        }
+
+        /* ── DARK THEME ── */
+        [data-theme="dark"] {
+            --bg-primary:    #0f1117;
+            --bg-card:       #1a1f2e;
+            --sidebar-bg:    #13171f;
+            --topbar-bg:     #13171f;
+            --border-color:  #232b3a;
+            --text-primary:  #e8edf5;
+            --text-secondary:#7f8ea3;
+            --text-muted:    #3d4d60;
+            --accent-blue:   #4f8ef7;
+            --accent-cyan:   #00d4ff;
+            --accent-purple: #8b5cf6;
+            --accent-green:  #10b981;
+            --accent-red:    #ef4444;
+            --accent-orange: #f59e0b;
+            --shadow:        0 2px 12px rgba(0,0,0,0.35);
+            --shadow-hover:  0 8px 28px rgba(0,0,0,0.5);
+            --nav-hover:     rgba(79,142,247,0.08);
+            --nav-active-bg: rgba(79,142,247,0.14);
+            --nav-active-color: #4f8ef7;
+            --input-bg:      rgba(255,255,255,0.04);
+            --table-stripe:  rgba(255,255,255,0.02);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.25s, color 0.25s;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            width: 220px; height: 100vh;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex; flex-direction: column;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+            transition: background 0.25s;
+        }
+
+        .sidebar-brand {
+            display: flex; align-items: center; gap: 10px;
+            padding: 20px 18px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand-icon {
+            width: 34px; height: 34px;
+            background: var(--accent-blue);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 15px; flex-shrink: 0;
+        }
+
+        .brand-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+
+        .sidebar-user {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .user-avatar {
+            width: 32px; height: 32px;
+            background: var(--accent-blue);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 13px; font-weight: 700; flex-shrink: 0;
+        }
+
+        .user-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .user-role { font-size: 10px; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 500; }
+
+        .sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+
+        .nav-section {
+            font-size: 10px; font-weight: 600; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 1.2px;
+            padding: 10px 10px 4px;
+        }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 9px;
+            padding: 9px 10px; border-radius: 7px;
+            color: var(--text-secondary); text-decoration: none;
+            font-size: 13px; font-weight: 500;
+            transition: all 0.15s ease;
+            margin-bottom: 1px;
+        }
+
+        .nav-link:hover  { background: var(--nav-hover); color: var(--text-primary); }
+        .nav-link.active { background: var(--nav-active-bg); color: var(--nav-active-color); font-weight: 600; }
+        .nav-link i { width: 16px; text-align: center; font-size: 13px; }
+
+        .sidebar-footer {
+            padding: 12px 10px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Dark mode toggle */
+        .theme-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 9px 10px; border-radius: 7px;
+            cursor: pointer; margin-bottom: 4px;
+            transition: background 0.15s;
+        }
+        .theme-row:hover { background: var(--nav-hover); }
+        .theme-row-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+
+        .toggle {
+            width: 34px; height: 18px;
+            background: var(--border-color);
+            border-radius: 9px; position: relative;
+            transition: background 0.25s; flex-shrink: 0;
+        }
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 12px; height: 12px;
+            background: white; border-radius: 50%;
+            top: 3px; left: 3px;
+            transition: transform 0.25s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        [data-theme="dark"] .toggle { background: var(--accent-blue); }
+        [data-theme="dark"] .toggle::after { transform: translateX(16px); }
+
+        /* ── MAIN ── */
+        .main-content { margin-left: 220px; min-height: 100vh; }
+
+        .topbar {
+            background: var(--topbar-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: var(--shadow);
+            transition: background 0.25s;
+        }
+
+        .topbar-title    { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+        .topbar-subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
+
+        .page-body { padding: 24px; }
+
+        /* ── CARDS ── */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            transition: box-shadow 0.2s, border-color 0.2s, background 0.25s;
+        }
+        .card:hover { box-shadow: var(--shadow-hover); }
+
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 18px;
+            font-weight: 600; font-size: 14px; color: var(--text-primary);
+        }
+
+        .card-body { padding: 18px; }
+
+        /* ── STAT CARDS ── */
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 18px;
+            box-shadow: var(--shadow);
+            transition: all 0.2s ease;
+        }
+        .stat-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+
+        .stat-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+
+        .stat-icon {
+            width: 40px; height: 40px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center; font-size: 17px;
+        }
+        .stat-icon.blue   { background: #eff6ff; color: var(--accent-blue); }
+        .stat-icon.green  { background: #f0fdf4; color: var(--accent-green); }
+        .stat-icon.red    { background: #fef2f2; color: var(--accent-red); }
+        .stat-icon.purple { background: #f5f3ff; color: var(--accent-purple); }
+
+        [data-theme="dark"] .stat-icon.blue   { background: rgba(79,142,247,0.12); }
+        [data-theme="dark"] .stat-icon.green  { background: rgba(16,185,129,0.12); }
+        [data-theme="dark"] .stat-icon.red    { background: rgba(239,68,68,0.12); }
+        [data-theme="dark"] .stat-icon.purple { background: rgba(139,92,246,0.12); }
+
+        .stat-value { font-size: 28px; font-weight: 700; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
+        .stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 2px; font-weight: 500; }
+
+        /* ── BUTTONS ── */
+        .btn-primary {
+            background: var(--accent-blue); border: none; border-radius: 7px;
+            padding: 9px 18px; font-weight: 600; font-size: 13px; color: white;
+            transition: all 0.15s; cursor: pointer;
+        }
+        .btn-primary:hover { background: #1d4ed8; color: white; box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+
+        .btn-success {
+            background: var(--accent-green); border: none; border-radius: 7px;
+            padding: 9px 18px; font-weight: 600; font-size: 13px; color: white;
+            transition: all 0.15s; cursor: pointer;
+        }
+        .btn-success:hover { background: #047857; color: white; }
+
+        .btn-danger {
+            background: var(--accent-red); border: none; border-radius: 7px;
+            padding: 9px 18px; font-weight: 600; font-size: 13px; color: white;
+            transition: all 0.15s; cursor: pointer;
+        }
+        .btn-danger:hover { background: #b91c1c; color: white; }
+
+        .btn-outline-secondary {
+            background: transparent; border: 1px solid var(--border-color);
+            border-radius: 7px; padding: 9px 18px;
+            font-weight: 600; font-size: 13px; color: var(--text-secondary);
+            transition: all 0.15s; cursor: pointer;
+        }
+        .btn-outline-secondary:hover { background: var(--nav-hover); color: var(--text-primary); }
+
+        /* ── TABLES ── */
+        .table { color: var(--text-primary); border-color: var(--border-color); }
+        .table thead th {
+            background: var(--table-stripe); color: var(--text-secondary);
+            font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+            border-color: var(--border-color); padding: 11px 16px; font-weight: 600;
+        }
+        .table tbody tr { border-color: var(--border-color); }
+        .table tbody tr:hover { background: var(--table-stripe); }
+        .table tbody td { padding: 12px 16px; border-color: var(--border-color); vertical-align: middle; font-size: 13px; }
+
+        /* ── FORMS ── */
+        .form-control, .form-select {
+            background: var(--input-bg); border: 1px solid var(--border-color);
+            border-radius: 7px; color: var(--text-primary);
+            padding: 9px 13px; font-size: 13px; transition: all 0.15s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-blue); color: var(--text-primary);
+            background: var(--bg-card); box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+        }
+        .form-control::placeholder { color: var(--text-muted); }
+        .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; }
+
+        /* ── BADGES ── */
+        .badge-custom { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-green  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .badge-red    { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .badge-blue   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .badge-orange { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+
+        [data-theme="dark"] .badge-green  { background: rgba(16,185,129,0.12); color: #34d399; border-color: rgba(16,185,129,0.25); }
+        [data-theme="dark"] .badge-red    { background: rgba(239,68,68,0.12);  color: #f87171; border-color: rgba(239,68,68,0.25); }
+        [data-theme="dark"] .badge-blue   { background: rgba(79,142,247,0.12); color: #93c5fd; border-color: rgba(79,142,247,0.25); }
+        [data-theme="dark"] .badge-orange { background: rgba(245,158,11,0.12); color: #fbbf24; border-color: rgba(245,158,11,0.25); }
+
+        /* ── ALERTS ── */
+        .alert-danger  { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; border-radius: 8px; }
+        .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; border-radius: 8px; }
+        [data-theme="dark"] .alert-danger  { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.3);  color: #f87171; }
+        [data-theme="dark"] .alert-success { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #34d399; }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .page-body { padding: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon"><i class="fas fa-boxes-stacked"></i></div>
+        <span class="brand-name">Marty's Store</span>
+    </div>
+
+    {% if user.is_authenticated %}
+    <div class="sidebar-user">
+        <div class="user-avatar">{{ user.username|first|upper }}</div>
+        <div>
+            <div class="user-name">{{ user.username }}</div>
+            <div class="user-role">{{ user.role }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <nav class="sidebar-nav">
+        <div class="nav-section">Main</div>
+        <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+
+        {% if user.role != 'cashier' %}
+        <div class="nav-section">Inventory</div>
+        <a href="{% url 'product_list' %}" class="nav-link {% if 'product' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-box"></i> Products
+        </a>
+        <a href="{% url 'bulk_barcode_print' %}" class="nav-link {% if request.resolver_match.url_name == 'bulk_barcode_print' %}active{% endif %}">
+            <i class="fas fa-barcode"></i> Print Barcodes
+        </a>
+        {% endif %}
+
+        <div class="nav-section">Sales</div>
+        <a href="{% url 'pos_view' %}" class="nav-link {% if request.resolver_match.url_name == 'pos_view' %}active{% endif %}">
+            <i class="fas fa-cash-register"></i> POS / Sales
+        </a>
+        {% if user.role != 'cashier' %}
+        <a href="{% url 'sales_report' %}" class="nav-link {% if request.resolver_match.url_name == 'sales_report' %}active{% endif %}">
+            <i class="fas fa-chart-line"></i> Reports
+        </a>
+        {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="theme-row" onclick="toggleTheme()">
+            <span class="theme-row-label">
+                <i class="fas fa-moon" id="themeIcon"></i>
+                <span id="themeLabel">Dark Mode</span>
+            </span>
+            <div class="toggle" id="toggleSwitch"></div>
+        </div>
+        <a href="{% url 'logout' %}" class="nav-link" style="color:var(--accent-red);">
+            <i class="fas fa-right-from-bracket"></i> Logout
+        </a>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+            <div class="topbar-subtitle">{% block page_subtitle %}Smart Inventory Management{% endblock %}</div>
+        </div>
+        <div class="d-flex gap-2">{% block topbar_actions %}{% endblock %}</div>
+    </div>
+
+    <div class="page-body">
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-3">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    applyTheme(savedTheme);
+
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        document.getElementById('themeIcon').className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        document.getElementById('themeLabel').textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+        localStorage.setItem('theme', theme);
+    }
+
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme');
+        applyTheme(current === 'dark' ? 'light' : 'dark');
+    }
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

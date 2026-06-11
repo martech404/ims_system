@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Barcode Labels - Smart Inventory</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #e9ecef;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn { padding: 10px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; text-decoration: none; display: inline-block; }
+        .btn-print { background: #198754; color: white; }
+        .btn-back  { background: #6c757d; color: white; }
+
+        .label-size-selector { display: flex; align-items: center; gap: 8px; background: white; padding: 8px 16px; border-radius: 6px; font-size: 14px; }
+        .label-size-selector select { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+
+        .sheet {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 8mm;
+            box-shadow: 0 0 15px rgba(0,0,0,0.15);
+            display: grid;
+            gap: 3mm;
+            align-content: start;
+        }
+
+        .sheet.size-small  { grid-template-columns: repeat(4, 1fr); }
+        .sheet.size-medium { grid-template-columns: repeat(3, 1fr); }
+        .sheet.size-large  { grid-template-columns: repeat(2, 1fr); }
+
+        .label {
+            border: 1px dashed #bbb;
+            padding: 6px 4px;
+            text-align: center;
+            page-break-inside: avoid;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .label .store-name { font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #333; margin-bottom: 3px; }
+
+        .label svg { max-width: 100%; height: auto; }
+        .size-small  .label svg { height: 35px; }
+        .size-medium .label svg { height: 50px; }
+        .size-large  .label svg { height: 65px; }
+
+        .label .product-name  { font-size: 10px; font-weight: bold; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; color: #000; }
+        .label .product-price { font-size: 13px; font-weight: bold; color: #000; margin-top: 2px; }
+        .label .barcode-text  { font-size: 8px; color: #666; font-family: 'Courier New', monospace; margin-top: 1px; }
+
+        .size-large .label .product-name  { font-size: 13px; }
+        .size-large .label .product-price { font-size: 16px; }
+
+        .no-barcode { height: 50px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #aaa; border: 1px solid #ddd; width: 100%; }
+
+        @media print {
+            body { background: white; padding: 0; display: block; }
+            .controls { display: none !important; }
+            .sheet { box-shadow: none; width: 100%; min-height: auto; padding: 5mm; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="controls">
+    <a href="{% url 'product_list' %}" class="btn btn-back">← Back to Inventory</a>
+    <div class="label-size-selector">
+        <label><strong>Label Size:</strong></label>
+        <select id="sizeSelect" onchange="changeSize(this.value)">
+            <option value="medium" selected>Medium (3 per row)</option>
+            <option value="small">Small (4 per row)</option>
+            <option value="large">Large (2 per row)</option>
+        </select>
+    </div>
+    <button onclick="window.print()" class="btn btn-print">🖨️ Print Barcode Labels</button>
+</div>
+
+<div class="sheet size-medium" id="sheet">
+    {% for product in products %}
+    <div class="label">
+        <div class="store-name">MARTY'S STORE</div>
+
+        <!-- 
+            IMPORTANT: data-code encodes "ProductName - NPrice"
+            So when scanned it shows: "Iphone XR - N230000"
+            exactly like Image 2 
+        -->
+        <svg class="barcode"
+             data-code="{{ product.name }} - N{{ product.price|floatformat:0 }}">
+        </svg>
+
+        <div class="product-name">{{ product.name|truncatechars:25 }}</div>
+        <div class="product-price">₦{{ product.price }}</div>
+        <div class="barcode-text">{{ product.barcode_code }}</div>
+    </div>
+    {% empty %}
+    <div style="padding:40px; text-align:center; color:#999; grid-column:1/-1;">
+        No products found. Add products first.
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        generateBarcodes();
+    });
+
+    function generateBarcodes() {
+        document.querySelectorAll('svg.barcode').forEach(function (svg) {
+            const code = svg.getAttribute('data-code');
+            if (!code) return;
+            try {
+                JsBarcode(svg, code, {
+                    format: 'CODE128',
+                    lineColor: '#000000',
+                    width: 1.8,
+                    height: 50,
+                    displayValue: false,
+                    margin: 2,
+                    background: '#ffffff',
+                });
+            } catch (e) {
+                svg.outerHTML = '<div class="no-barcode">Invalid code</div>';
+            }
+        });
+    }
+
+    function changeSize(size) {
+        document.getElementById('sheet').className = 'sheet size-' + size;
+    }
+</script>
+</body>
+</html>

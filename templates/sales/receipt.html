@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Receipt #{{ sale.id }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* No-print action buttons */
+        .no-print {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .btn-print {
+            padding: 10px 24px;
+            background: #0d6efd;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-back {
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        /* Thermal receipt */
+        .ticket {
+            background: white;
+            width: 320px;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.15);
+            border-radius: 4px;
+        }
+
+        .store-name {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+
+        .store-info {
+            font-size: 11px;
+            text-align: center;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px dashed #999;
+            margin: 10px 0;
+        }
+
+        .receipt-meta {
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+
+        thead th {
+            border-bottom: 1px dashed #ccc;
+            padding: 4px 2px;
+            text-align: left;
+        }
+
+        thead th:nth-child(2) { text-align: center; }
+        thead th:nth-child(3) { text-align: right; }
+
+        tbody td {
+            padding: 5px 2px;
+            border-bottom: 1px dashed #eee;
+            vertical-align: top;
+        }
+
+        tbody td:nth-child(2) { text-align: center; }
+        tbody td:nth-child(3) { text-align: right; white-space: nowrap; }
+
+        .totals-section {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+
+        .total-row.grand {
+            font-size: 16px;
+            font-weight: bold;
+            border-top: 1px dashed #999;
+            padding-top: 8px;
+            margin-top: 4px;
+        }
+
+        .footer {
+            margin-top: 16px;
+            font-size: 11px;
+            text-align: center;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+                display: block;
+            }
+            .no-print { display: none !important; }
+            .ticket {
+                box-shadow: none;
+                width: 100%;
+                border-radius: 0;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Action Buttons (hidden when printing) -->
+<div class="no-print">
+    <button class="btn-print" onclick="window.print()">
+        🖨️ Print Receipt
+    </button>
+    <a href="{% url 'pos_view' %}" class="btn-back">← Back to POS</a>
+</div>
+
+<!-- Receipt Ticket -->
+<div class="ticket">
+    <div class="store-name">MARTY'S STORE</div>
+    <div class="store-info">
+        123 Main Street, Lagos<br>
+        Tel: +234 800 000 0000
+    </div>
+
+    <hr class="divider">
+
+    <div class="receipt-meta">
+        Receipt #: <strong>{{ sale.id }}</strong><br>
+        Date: {{ sale.date_added|date:"M d, Y H:i" }}<br>
+        Cashier: {{ sale.cashier.username }}
+    </div>
+
+    <hr class="divider">
+
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in sale.items.all %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>₦{{ item.price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totals-section">
+        <div class="total-row grand">
+            <span>TOTAL</span>
+            <span>₦{{ sale.total_amount }}</span>
+        </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="footer">
+        Thank you for your patronage!<br>
+        Goods bought in good condition cannot be returned.<br>
+        <strong>*** CUSTOMER COPY ***</strong>
+    </div>
+</div>
+
+<script>
+    // Auto-print when page loads
+    window.onload = function() {
+        window.print();
+    }
+</script>
+</body>
+</html>
